@@ -203,6 +203,8 @@ def readDataGromacs(P):
    
    lv = []  # *** 
    P.snap_size = []
+   # VG: this flag is set to True if user defined temperature is to be used
+   bUserTemperature = False
    for nf, f in enumerate(fs):
       lv.append(f.readHeader())
    
@@ -215,7 +217,7 @@ def readDataGromacs(P):
                raise SystemExit("\nERROR!\nThe lambda gradient components have different names; I cannot combine the data.")
          if not f.bPV == bPV:
             raise SystemExit("\nERROR!\nSome files contain the PV energies, some do not; I cannot combine the files.")
-         if not f.temperature == temperature: # compare against a string, not a float.
+         if f.temperature != temperature and bUserTemperature==False: # compare against a string, not a float. # VG: 
             raise SystemExit("\nERROR!\nTemperature is not the same in all .xvg files.")
    
       else:
@@ -223,6 +225,13 @@ def readDataGromacs(P):
          P.lv_names = lv_names = f.lv_names
 
          temperature = f.temperature
+         # VG: in case simulation is started with simulated annealing, temperature in the .xvg subtitle may be wrong 
+         # VG: (only the starting temperature of the annealing is written there)
+         # VG: in this case use user defined temperature
+         if temperature != P.temperature:
+             temperature = P.temperature
+             bUserTemperature = True
+
          if temperature:
             temperature_float = float(temperature)
             P.beta *= P.temperature/temperature_float
